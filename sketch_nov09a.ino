@@ -47,11 +47,6 @@ void setup()
   myLcdKeypad = new LcdKeypad();  
   myLcdKeypad->attachAdapter(new MyLcdKeypadAdapter(myLcdKeypad));
   myLcdKeypad->setBacklight(static_cast<LcdKeypad::LcdBacklightColor>(LcdKeypad::LCDBL_WHITE));
-  
-  myLcdKeypad->setCursor(0, 0);  
-  myLcdKeypad->print("Temerature:");
-  myLcdKeypad->setCursor(0, 1); 
-  myLcdKeypad->print("Humidity:");
 }
 
 void loop()
@@ -64,9 +59,15 @@ void loop()
     case DHT_OK:
       // выводим показания влажности и температуры
 
+      myLcdKeypad->setCursor(0, 0);  
+      myLcdKeypad->print("Temerature:");
+      
       myLcdKeypad->setCursor(11, 0); 
       myLcdKeypad->print(dht.getTemperatureC());
       myLcdKeypad->print("                ");
+
+      myLcdKeypad->setCursor(0, 1); 
+      myLcdKeypad->print("Humidity:");
 
       myLcdKeypad->setCursor(9, 1); 
       myLcdKeypad->print((int)dht.getHumidity());
@@ -75,15 +76,23 @@ void loop()
       break;
     // ошибка контрольной суммы
     case DHT_ERROR_CHECKSUM:
-      Serial.println("Checksum error");
+      myLcdKeypad->clear();
+      myLcdKeypad->setCursor(0, 0);
+      myLcdKeypad->print("Checksum error");
       break;
     // превышение времени ожидания
     case DHT_ERROR_TIMEOUT:
-      Serial.println("Time out error");
+      myLcdKeypad->clear();
+      myLcdKeypad->setCursor(0, 0);
+      myLcdKeypad->print("Time out error");
       break;
     // данных нет, датчик не реагирует или отсутствует
     case DHT_ERROR_NO_REPLY:
-      Serial.println("Sensor not connected");
+      myLcdKeypad->clear();
+      myLcdKeypad->setCursor(0, 0);
+      myLcdKeypad->print("Sensor is not");
+      myLcdKeypad->setCursor(0, 1);
+      myLcdKeypad->print("connected");
       break;
   }
 

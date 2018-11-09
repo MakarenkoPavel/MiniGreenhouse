@@ -5,6 +5,8 @@
 DHT dht(2, DHT11);
 
 LcdKeypad* myLcdKeypad = 0;
+enum SCREEN_TYPE {SETUP, PARAM, DIF};
+unsigned int curScreen = 1;
 
 // Implement specific LcdKeypadAdapter in order to allow receiving key press events
 class MyLcdKeypadAdapter : public LcdKeypadAdapter
@@ -18,22 +20,23 @@ public:
   , m_value(5)
   { }
 
-  // Specific handleKeyChanged() method implementation - define your actions here
   void handleKeyChanged(LcdKeypad::Key newKey)
   {
-    if (0 != m_lcdKeypad)
+    if (m_lcdKeypad)
     {
-      if (LcdKeypad::UP_KEY == newKey)
-      {
+      if (LcdKeypad::UP_KEY == newKey) {
         m_value++;
       }
-      else if (LcdKeypad::DOWN_KEY == newKey)
-      {
+      else if (LcdKeypad::DOWN_KEY == newKey) {
         m_value--;
       }
-      //m_lcdKeypad->setCursor(6, 0);            // position the cursor at beginning of the second line
-      //m_lcdKeypad->print(m_value);             // print the value on the second line of the display
-      //m_lcdKeypad->print("                ");  // wipe out characters behind the printed value
+
+      if(LcdKeypad::LEFT_KEY == newKey) {
+        if(curScreen >= 0) curScreen--;
+      }
+      else if(LcdKeypad::RIGHT_KEY == newKey) {
+        if(curScreen <= 2) curScreen++;
+      }
     }
   }
 };
@@ -51,14 +54,16 @@ void setup()
 
 void loop()
 {
-  // считывание данных с датчика
   dht.read();
-  // проверяем состояние данных
-  switch(dht.getState()) {
-    // всё OK
-    case DHT_OK:
-      // выводим показания влажности и температуры
 
+  if(curScreen == SETUP) {
+    myLcdKeypad->clear();
+    myLcdKeypad->setCursor(0, 0);  
+    myLcdKeypad->print("SETUP");
+  }
+  else if(curScreen == PARAM) {
+    switch(dht.getState()) {
+    case DHT_OK:
       myLcdKeypad->setCursor(0, 0);  
       myLcdKeypad->print("Temerature:");
       
@@ -74,19 +79,16 @@ void loop()
       myLcdKeypad->print("%");
       
       break;
-    // ошибка контрольной суммы
     case DHT_ERROR_CHECKSUM:
       myLcdKeypad->clear();
       myLcdKeypad->setCursor(0, 0);
       myLcdKeypad->print("Checksum error");
       break;
-    // превышение времени ожидания
     case DHT_ERROR_TIMEOUT:
       myLcdKeypad->clear();
       myLcdKeypad->setCursor(0, 0);
       myLcdKeypad->print("Time out error");
       break;
-    // данных нет, датчик не реагирует или отсутствует
     case DHT_ERROR_NO_REPLY:
       myLcdKeypad->clear();
       myLcdKeypad->setCursor(0, 0);
@@ -94,7 +96,17 @@ void loop()
       myLcdKeypad->setCursor(0, 1);
       myLcdKeypad->print("connected");
       break;
+    }
   }
+  else if(curScreen == DIF) {
+    myLcdKeypad->clear();
+    myLcdKeypad->setCursor(0, 0);  
+    myLcdKeypad->print("DIF");
+  }
+
+  unsigned int AnalogValue;
+  AnalogValue = analogRead(A1);
+  //Serial.println(AnalogValue);
 
   yield();
   delay(2000);

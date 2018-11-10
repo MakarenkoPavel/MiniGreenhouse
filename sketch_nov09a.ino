@@ -2,6 +2,8 @@
 #include <Timer.h>
 #include <LcdKeypad.h>
 
+#define P_RATE 10.12
+
 DHT dht(2, DHT11);
 
 LcdKeypad* myLcdKeypad = 0;
@@ -32,10 +34,10 @@ public:
       }
 
       if(LcdKeypad::LEFT_KEY == newKey) {
-        if(curScreen >= 0) curScreen--;
+        if(curScreen > 0) curScreen--;
       }
       else if(LcdKeypad::RIGHT_KEY == newKey) {
-        if(curScreen <= 2) curScreen++;
+        if(curScreen < 2) curScreen++;
       }
     }
   }
@@ -43,7 +45,6 @@ public:
 
 void setup()
 {
-  // открываем последовательный порт для мониторинга действий в программе
   Serial.begin(9600);
   dht.begin();
 
@@ -55,6 +56,9 @@ void setup()
 void loop()
 {
   dht.read();
+  
+  unsigned int photoSensor;
+  photoSensor = analogRead(A1);
 
   if(curScreen == SETUP) {
     myLcdKeypad->clear();
@@ -101,12 +105,13 @@ void loop()
   else if(curScreen == DIF) {
     myLcdKeypad->clear();
     myLcdKeypad->setCursor(0, 0);  
-    myLcdKeypad->print("DIF");
+    myLcdKeypad->print("Brightness:");
+    
+    myLcdKeypad->setCursor(11, 0);  
+    myLcdKeypad->print((int)(100 - (photoSensor / P_RATE)));
+    myLcdKeypad->print("%");
   }
 
-  unsigned int AnalogValue;
-  AnalogValue = analogRead(A1);
-  //Serial.println(AnalogValue);
 
   yield();
   delay(2000);

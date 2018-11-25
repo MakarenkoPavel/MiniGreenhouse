@@ -4,33 +4,44 @@
 
 #define P_RATE 10.12
 
+#define RELE_1 3
+#define RELE_2 4
+
+#define ON 0
+#define OFF 1
+
 DHT dht(2, DHT11);
 
 LcdKeypad* myLcdKeypad = 0;
 enum SCREEN_TYPE {SETUP, PARAM, DIF};
 unsigned int curScreen = 1;
+unsigned int curSetup = 0;
+unsigned int brightnessCurrent = 0;
+unsigned int brightnessLimit = 50;
 
 // Implement specific LcdKeypadAdapter in order to allow receiving key press events
 class MyLcdKeypadAdapter : public LcdKeypadAdapter
 {
 private:
   LcdKeypad* m_lcdKeypad;
-  unsigned char m_value;
 public:
   MyLcdKeypadAdapter(LcdKeypad* lcdKeypad)
   : m_lcdKeypad(lcdKeypad)
-  , m_value(5)
   { }
 
   void handleKeyChanged(LcdKeypad::Key newKey)
   {
     if (m_lcdKeypad)
     {
-      if (LcdKeypad::UP_KEY == newKey) {
-        m_value++;
+      if (curScreen == SETUP && LcdKeypad::UP_KEY == newKey) {
+        if(curSetup > 0) {
+          curSetup--;
+        }
       }
-      else if (LcdKeypad::DOWN_KEY == newKey) {
-        m_value--;
+      else if ( curScreen == SETUP && LcdKeypad::DOWN_KEY == newKey) {
+        if(curSetup < 2) {
+          curSetup++;
+        }
       }
 
       if(LcdKeypad::LEFT_KEY == newKey) {
@@ -51,6 +62,12 @@ void setup()
   myLcdKeypad = new LcdKeypad();  
   myLcdKeypad->attachAdapter(new MyLcdKeypadAdapter(myLcdKeypad));
   myLcdKeypad->setBacklight(static_cast<LcdKeypad::LcdBacklightColor>(LcdKeypad::LCDBL_WHITE));
+
+  digitalWrite(RELE_1, OFF); 
+  digitalWrite(RELE_2, OFF);   
+  
+  pinMode(RELE_1, OUTPUT);   
+  pinMode(RELE_2, OUTPUT);  
 }
 
 void loop()
@@ -60,12 +77,26 @@ void loop()
   unsigned int photoSensor;
   photoSensor = analogRead(A1);
 
+  brightnessCurrent = (int)(100 - (photoSensor / P_RATE));
+  if(brightnessCurrent < brightnessLimit) {
+    digitalWrite(RELE_1, ON); 
+   } else {
+    digitalWrite(RELE_1, OFF);
+   }
+  
+
   if(curScreen == SETUP) {
     myLcdKeypad->clear();
     myLcdKeypad->setCursor(0, 0);  
-    myLcdKeypad->print("SETUP");
+    myLcdKeypad->print("Set Brightness");
+    myLcdKeypad->setCursor(0, 1); 
+    myLcdKeypad->print("Set Temperature");
+
+    myLcdKeypad->setCursor(15, curSetup); 
+    myLcdKeypad->print("-");
   }
   else if(curScreen == PARAM) {
+    myLcdKeypad->clear();
     switch(dht.getState()) {
     case DHT_OK:
       myLcdKeypad->setCursor(0, 0);  
@@ -106,13 +137,11 @@ void loop()
     myLcdKeypad->clear();
     myLcdKeypad->setCursor(0, 0);  
     myLcdKeypad->print("Brightness:");
-    
     myLcdKeypad->setCursor(11, 0);  
-    myLcdKeypad->print((int)(100 - (photoSensor / P_RATE)));
+    myLcdKeypad->print(brightnessCurrent);
     myLcdKeypad->print("%");
   }
-
-
+   
   yield();
   delay(2000);
 }
